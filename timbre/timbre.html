@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Timbre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     CONFIGURACIÓN — editá estas dos líneas con tus datos
+     ============================================================ */
+  /* topic único de ntfy.sh — ¡no lo compartas públicamente! */
+  /* buscar más abajo: const NTFY_TOPIC = "..." */
+  /* nombre que aparece en la pantalla del visitante */
+  /* buscar más abajo: const HOUSE_NAME = "..." */
+
+  :root{
+    --bg-0:#14151a;
+    --bg-1:#1c1e26;
+    --plate:#20222b;
+    --brass:#c9a24b;
+    --brass-bright:#e8c877;
+    --glow:#ffb347;
+    --cream:#f1ece0;
+    --muted:#8b8d99;
+    --ok:#7fb87f;
+    --err:#d97b6c;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    height:100%;
+    margin:0;
+    background:
+      radial-gradient(ellipse 120% 80% at 50% -10%, #2a2416 0%, transparent 55%),
+      var(--bg-0);
+    font-family:'Inter', sans-serif;
+    color:var(--cream);
+    overflow:hidden;
+  }
+
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:24px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .scene{
+    width:100%;
+    max-width:380px;
+    text-align:center;
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+
+  .house-name{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:500;
+    font-size:clamp(28px, 8vw, 40px);
+    line-height:1.1;
+    margin:0 0 42px;
+    color:var(--cream);
+    letter-spacing:-0.01em;
+  }
+
+  /* ---- placa de timbre ---- */
+  .plate{
+    position:relative;
+    width:220px;
+    height:220px;
+    margin:0 auto 30px;
+    border-radius:28px;
+    background:linear-gradient(160deg, #262832, #1a1b22 70%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.05) inset,
+      0 -1px 0 rgba(0,0,0,0.4) inset,
+      0 20px 40px -12px rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .screw{
+    position:absolute;
+    width:7px; height:7px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #55575f, #2b2c33);
+  }
+  .screw::after{
+    content:'';
+    position:absolute;
+    top:50%; left:15%;
+    width:70%; height:1px;
+    background:rgba(0,0,0,0.5);
+    transform:rotate(35deg);
+  }
+  .screw.tl{top:14px; left:14px;}
+  .screw.tr{top:14px; right:14px;}
+  .screw.bl{bottom:14px; left:14px;}
+  .screw.br{bottom:14px; right:14px;}
+
+  .glow-halo{
+    position:absolute;
+    width:220px; height:220px;
+    border-radius:50%;
+    background:radial-gradient(circle, var(--glow) 0%, transparent 68%);
+    opacity:0;
+    filter:blur(2px);
+    pointer-events:none;
+    transition:opacity .5s ease;
+  }
+  .plate.armed .glow-halo{
+    opacity:.28;
+    animation:breathe 2.6s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{transform:scale(1); opacity:.22;}
+    50%{transform:scale(1.08); opacity:.36;}
+  }
+
+  .button{
+    position:relative;
+    width:132px;
+    height:132px;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    background:
+      radial-gradient(circle at 32% 28%, var(--brass-bright) 0%, var(--brass) 45%, #8a6d24 100%);
+    box-shadow:
+      0 8px 0 #6e551b,
+      0 14px 22px rgba(0,0,0,0.5),
+      inset 0 2px 3px rgba(255,255,255,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .button:active,
+  .button.pressed{
+    transform:translateY(6px);
+    box-shadow:
+      0 2px 0 #6e551b,
+      0 4px 10px rgba(0,0,0,0.5),
+      inset 0 2px 3px rgba(0,0,0,0.25);
+  }
+  .button:disabled{ cursor:default; }
+
+  .ring-icon{
+    width:46px; height:46px;
+    fill:none;
+    stroke:#3a2c0a;
+    stroke-width:2.4;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+
+  .ripple{
+    position:absolute;
+    width:132px; height:132px;
+    border-radius:50%;
+    border:2px solid var(--brass-bright);
+    opacity:0;
+    pointer-events:none;
+  }
+  .ripple.go{
+    animation:ripple-out .7s ease-out;
+  }
+  @keyframes ripple-out{
+    0%{ transform:scale(1); opacity:.65; }
+    100%{ transform:scale(1.9); opacity:0; }
+  }
+
+  .caption{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.02em;
+    min-height:20px;
+    transition:color .3s ease;
+  }
+  .caption.ok{ color:var(--ok); }
+  .caption.err{ color:var(--err); }
+
+  .status-card{
+    margin-top:26px;
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .status-card.show{ opacity:1; transform:translateY(0); }
+
+  .checkmark{
+    width:30px; height:30px;
+    margin:0 auto 8px;
+  }
+  .checkmark circle{
+    fill:none; stroke:var(--ok); stroke-width:2;
+    stroke-dasharray:76; stroke-dashoffset:76;
+    animation:draw .5s ease forwards .1s;
+  }
+  .checkmark path{
+    fill:none; stroke:var(--ok); stroke-width:2.4;
+    stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:20; stroke-dashoffset:20;
+    animation:draw .3s ease forwards .5s;
+  }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+
+  .retry{
+    margin-top:10px;
+    background:none;
+    border:1px solid var(--muted);
+    color:var(--cream);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    padding:8px 18px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .retry:hover{ border-color:var(--brass); color:var(--brass-bright); }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="eyebrow">Timbre digital</div>
+  <h1 class="house-name" id="houseName">¡Bienvenido!</h1>
+
+  <div class="plate armed" id="plate">
+    <div class="glow-halo"></div>
+    <div class="ripple" id="ripple"></div>
+    <button class="button" id="ringBtn" aria-label="Tocar timbre">
+      <svg class="ring-icon" viewBox="0 0 24 24">
+        <path d="M12 3c-3 0-5 2.2-5 5.2v3.3c0 1-.4 2-1.1 2.7L4.5 15.6c-.4.4-.1 1.1.4 1.1h14.2c.5 0 .8-.7.4-1.1l-1.4-1.4c-.7-.7-1.1-1.7-1.1-2.7V8.2C17 5.2 15 3 12 3Z"/>
+        <path d="M9.5 18.5a2.6 2.6 0 0 0 5 0"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="caption" id="caption">Tocá para avisar</div>
+
+  <div class="status-card" id="statusCard">
+    <svg class="checkmark" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="15"/>
+      <path d="M10 18l5 5 11-11"/>
+    </svg>
+    <div style="font-size:13px; color:var(--muted);">Avisamos a los de adentro</div>
+    <button class="retry" id="retryBtn" style="display:none;">Reintentar</button>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     CONFIGURACIÓN
+     ============================================================ */
+  const NTFY_TOPIC  = "timbre-21dc6ab09c3f"; // tema único de ntfy.sh — no lo compartas
+  const HOUSE_NAME  = "¡Bienvenido!";        // texto que ve el visitante
+
+  document.getElementById('houseName').textContent = HOUSE_NAME;
+
+  const btn        = document.getElementById('ringBtn');
+  const plate      = document.getElementById('plate');
+  const ripple     = document.getElementById('ripple');
+  const caption    = document.getElementById('caption');
+  const statusCard = document.getElementById('statusCard');
+  const retryBtn   = document.getElementById('retryBtn');
+
+  async function ring(){
+    btn.disabled = true;
+    btn.classList.add('pressed');
+    ripple.classList.remove('go'); void ripple.offsetWidth; ripple.classList.add('go');
+    caption.textContent = 'Sonando...';
+    caption.className = 'caption';
+    retryBtn.style.display = 'none';
+
+    try{
+      const res = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+        method:'POST',
+        headers:{
+          'Title':'🔔 Tocaron el timbre',
+          'Priority':'urgent',
+          'Tags':'bellhop_bell'
+        },
+        body:'Hay alguien en la puerta.'
+      });
+      if(!res.ok) throw new Error('bad status');
+
+      plate.classList.remove('armed');
+      caption.textContent = '¡Listo!';
+      caption.classList.add('ok');
+      statusCard.classList.add('show');
+    }catch(err){
+      caption.textContent = 'No se pudo avisar';
+      caption.classList.add('err');
+      retryBtn.style.display = 'inline-block';
+      btn.disabled = false;
+      btn.classList.remove('pressed');
+    }
+  }
+
+  btn.addEventListener('click', ring);
+  retryBtn.addEventListener('click', ring);
+</script>
+
+</body>
+</html>
